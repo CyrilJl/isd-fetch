@@ -59,19 +59,6 @@ data['temp'].plot(figsize=(10, 4), legend=False, c='grey', lw=0.6)
 
 ![time_series](https://github.com/CyrilJl/pyisd/blob/main/assets/temp_time_series.png?raw=true)
 
-### **2. Fetching and Visualizing Data**
-To retrieve data, you can specify the time period and spatial constraints. Here, we fetch temperature data (`temp`) for the bounding box around Paris between January 1, 2023, and November 20, 2024:
-
-```python
-from pyisd.misc import get_box
-
-geometry = get_box(place='Paris', width=1., crs=CRS)
-
-data = module.get_data(start=20230101, end=20241120, geometry=geometry, organize_by='field')
-
-data['temp'].plot(figsize=(10, 4), legend=False, c='grey', lw=0.6)
-```
-
 #### **Flexibility of `geometry`**
 The `geometry` parameter is highly flexible and can be set in different ways:
 
