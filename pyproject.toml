@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 packages = ["isd-fetch"]
 
 [project]
-name = "pyisd"
+name = "isd-fetch"
 version = "0.1.0"
 description = "A Python package for manipulating and analyzing ISD data."
 authors = [
