@@ -37,6 +37,10 @@ The output displays station metadata including station name, latitude, longitude
 11356  489250  99999             OUDOMXAY   LA  NaN   NaN  20.683  102.000    550.0  19840701  20241117  102.000  20.683      POINT (102 20.683)
 ```
 
+The available stations locations can be visualized :
+
+![map_isd](https://github.com/CyrilJl/pyisd/blob/main/assets/noaa_isd_locations.png?raw=true)
+
 ### **2. Fetching and Visualizing Data**
 To retrieve data, you can specify the time period and spatial constraints. Here, we fetch temperature data (`temp`) for the bounding box around Paris between January 1, 2023, and November 20, 2024:
 
