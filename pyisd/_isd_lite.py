@@ -25,6 +25,7 @@ class IsdLite:
             try:
                 metadata = pd.read_fwf(self.raw_metadata_url, skiprows=19)
                 metadata = metadata.dropna(subset=['LAT', 'LON'])
+                metadata = metadata[~(metadata.x==0 & metadata.y==0)]
                 metadata['x'], metadata['y'] = proj(metadata['LON'], metadata['LAT'], 4326, self.crs)
                 self.raw_metadata = gpd.GeoDataFrame(metadata, geometry=gpd.points_from_xy(metadata.x, metadata.y, crs=self.crs))
             except Exception as e:
