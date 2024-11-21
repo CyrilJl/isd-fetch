@@ -2,6 +2,11 @@
 
 **PyISD** is a Python package designed for loading and processing NOAA's ISD Lite dataset. The dataset, as described by NOAA, is a streamlined version of the full Integrated Surface Database (ISD). It includes eight common surface parameters in a fixed-width format, free of duplicate values, sub-hourly data, and complicated flags, making it suitable for general research and scientific purposes. For more details, visit the [official ISD homepage](https://www.ncei.noaa.gov/products/land-based-station/integrated-surface-database).
 
+## Installation
+```bash
+pip install isd-fetch
+```
+
 ## **Features**
 - Load and query the ISD Lite dataset with ease.
 - Retrieve and process metadata for stations worldwide.
@@ -53,3 +58,26 @@ data['temp'].plot(figsize=(10, 4), legend=False, c='grey', lw=0.6)
 ```
 
 ![time_series](https://github.com/CyrilJl/pyisd/blob/main/assets/temp_time_series.png?raw=true)
+
+### **2. Fetching and Visualizing Data**
+To retrieve data, you can specify the time period and spatial constraints. Here, we fetch temperature data (`temp`) for the bounding box around Paris between January 1, 2023, and November 20, 2024:
+
+```python
+from pyisd.misc import get_box
+
+geometry = get_box(place='Paris', width=1., crs=CRS)
+
+data = module.get_data(start=20230101, end=20241120, geometry=geometry, organize_by='field')
+
+data['temp'].plot(figsize=(10, 4), legend=False, c='grey', lw=0.6)
+```
+
+#### **Flexibility of `geometry`**
+The `geometry` parameter is highly flexible and can be set in different ways:
+
+1. **Bounding Box**: Use the `get_box()` function as shown above to define a simple rectangular bounding box around a location.
+2. **Custom Geometries**: You can pass any `shapely.geometry` object (e.g., `Polygon`, `MultiPolygon`) or a `geopandas` `GeoDataFrame` to define more specific regions of interest.
+3. **`None`**: If `geometry` is set to `None`, the function retrieves data for all available stations globally.  
+   ⚠️ **Note**: Setting `geometry=None` is **not advised** unless strictly necessary, as the download time and data size can be extremely large.
+
+By carefully specifying `geometry`, you can focus on the data most relevant to your study while avoiding unnecessarily large downloads.
