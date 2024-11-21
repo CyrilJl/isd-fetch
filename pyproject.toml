@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyisd"
+version = "0.1.0"
+description = "A Python package for manipulating and analyzing ISD data."
+authors = [
+    { name = "Cyril Joly"}
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+keywords = ["isd", "noaa"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.8"
+
+dependencies = [
+    "geopandas",
+    "tqdm"
+]
