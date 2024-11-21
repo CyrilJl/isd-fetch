@@ -7,7 +7,7 @@ packages = ["pyisd"]
 
 [project]
 name = "isd-fetch"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Python package for manipulating and analyzing ISD data."
 authors = [
     { name = "Cyril Joly"}

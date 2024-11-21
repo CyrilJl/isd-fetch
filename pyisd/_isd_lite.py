@@ -26,7 +26,7 @@ class IsdLite:
                 metadata = pd.read_fwf(self.raw_metadata_url, skiprows=19)
                 metadata = metadata.dropna(subset=['LAT', 'LON'])
                 metadata['x'], metadata['y'] = proj(metadata['LON'], metadata['LAT'], 4326, self.crs)
-                self._raw_metadata = gpd.GeoDataFrame(metadata, geometry=gpd.points_from_xy(metadata.x, metadata.y, crs=self.crs))
+                self.raw_metadata = gpd.GeoDataFrame(metadata, geometry=gpd.points_from_xy(metadata.x, metadata.y, crs=self.crs))
             except Exception as e:
                 if attempt < self.max_retries - 1:
                     sleep(2)
@@ -35,9 +35,12 @@ class IsdLite:
 
     def _filter_metadata(self, geometry):
         if geometry is None:
-            return self._raw_metadata['USAF'].unique()
+            return self.raw_metadata['USAF'].unique()
         else:
-            return gpd.clip(self._raw_metadata, geometry)['USAF'].unique()
+            if isinstance(geometry, gpd.base.GeoPandasBase):
+                return gpd.clip(self.raw_metadata, geometry.to_crs(self.crs))['USAF'].unique()
+            else:
+                return gpd.clip(self.raw_metadata, geometry)['USAF'].unique()
 
     @classmethod
     def _download_read(cls, url):
