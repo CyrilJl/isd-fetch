@@ -29,19 +29,12 @@ module.raw_metadata.sample(5)
 The output displays station metadata including station name, latitude, longitude, elevation, and the period of available records:
 
 ```
-         USAF   WBAN             STATION NAME CTRY   ST CALL     LAT      LON  \
-8480   377350  99999                   GANDJA   AJ  NaN  NaN  40.717   46.417   
-1023   027710  99999  JOUTSA LEIVONMAKI SAVEN   FI  NaN  NaN  61.883   26.100   
-11880  545340  99999                 TANGSHAN   CH  NaN  NaN  39.650  118.100   
-3795   111900  99999               EISENSTADT   AU  NaN  NaN  47.850   16.533   
-26693  957119  99999     WEST WYALONG AIRPORT   AS  NaN  NaN -33.930  147.200   
-
-        ELEV(M)     BEGIN       END        x       y               geometry  
-8480     309.0  19320101  20241117   46.417  40.717  POINT (46.417 40.717)  
-1023     146.0  20080115  20241112   26.100  61.883    POINT (26.1 61.883)  
-11880     29.0  19560820  20241112  118.100  39.650    POINT (118.1 39.65)  
-3795     189.3  19730627  20241117   16.533  47.850   POINT (16.533 47.85)  
-26693    262.0  19651231  19840629  147.200 -33.930   POINT (147.2 -33.93)  
+         USAF   WBAN         STATION NAME CTRY   ST  CALL     LAT      LON  ELEV(M)     BEGIN       END        x       y                geometry
+27133  990076  99999   ENVIRON BUOY 31001  NaN  NaN   NaN   0.000  -35.000      0.0  20041110  20041110  -35.000   0.000           POINT (-35 0)
+7779   338480  99999              OCHAKOV   UP  NaN   NaN  46.633   31.550     41.0  19600128  20011222   31.550  46.633    POINT (31.55 46.633)
+23794  840260  99999  GENERAL RIVADENEIRA   EC  NaN   NaN  -0.983  -79.633     10.0  20040902  20241117  -79.633  -0.983  POINT (-79.633 -0.983)
+20203  725489  99999     ORANGE CITY MUNI   US   IA  KORC  42.983  -96.067    431.0  19950423  19971231  -96.067  42.983  POINT (-96.067 42.983)
+11356  489250  99999             OUDOMXAY   LA  NaN   NaN  20.683  102.000    550.0  19840701  20241117  102.000  20.683      POINT (102 20.683)
 ```
 
 ### **2. Fetching and Visualizing Data**
