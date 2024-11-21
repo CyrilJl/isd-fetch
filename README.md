@@ -10,14 +10,12 @@
 ## **Example Usage**
 
 ### **1. Importing and Loading Metadata**
-You can start by importing the `IsdLite` module and fetching metadata for weather stations worldwide. Below is an example where we define a bounding box around Paris, France, and display a sample of the station metadata:
+You can start by importing the `IsdLite` module, fetching metadata for weather stations worldwide and displaying a sample of the station metadata:
 
 ```python
 from pyisd import IsdLite
-from pyisd.misc import get_box
 
 CRS = 4326
-geometry = get_box(place='Paris', width=1., crs=CRS)
 
 module = IsdLite(crs=CRS, verbose=True)
 module.raw_metadata.sample(5)
@@ -45,6 +43,10 @@ The output displays station metadata including station name, latitude, longitude
 To retrieve data, you can specify the time period and spatial constraints. Here, we fetch temperature data (`temp`) for the bounding box around Paris between January 1, 2023, and November 20, 2024:
 
 ```python
+from pyisd.misc import get_box
+
+geometry = get_box(place='Paris', width=1., crs=CRS)
+
 data = module.get_data(start=20230101, end=20241120, geometry=geometry, organize_by='field')
 
 data['temp'].plot(figsize=(10, 4), legend=False, c='grey', lw=0.6)
