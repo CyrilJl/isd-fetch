@@ -27,7 +27,7 @@ class IsdLite:
                 url = self.raw_metadata_url_src_1 if attempt % 2 == 0 else self.raw_metadata_url_src_2
                 metadata = pd.read_fwf(url, skiprows=19)
                 metadata = metadata.dropna(subset=['LAT', 'LON'])
-                metadata = metadata[~(metadata.x == 0 & metadata.y == 0)]
+                metadata = metadata[~(metadata.LON == 0 & metadata.LAT == 0)]
                 metadata['x'], metadata['y'] = proj(metadata['LON'], metadata['LAT'], 4326, self.crs)
                 self.raw_metadata = gpd.GeoDataFrame(metadata, geometry=gpd.points_from_xy(metadata.x, metadata.y, crs=self.crs))
                 return
