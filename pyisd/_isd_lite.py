@@ -10,7 +10,8 @@ from .misc import check_params, daterange, proj, to_crs
 
 
 class IsdLite:
-    raw_metadata_url = 'https://www.ncei.noaa.gov/pub/data/noaa/isd-history.txt'
+    raw_metadata_url_src_1 = 'https://www.ncei.noaa.gov/pub/data/noaa/isd-history.txt'
+    raw_metadata_url_src_2 = "ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-history.txt"
     data_url = "https://www.ncei.noaa.gov/pub/data/noaa/isd-lite/{year}/"
     fields = ('temp', 'dewtemp', 'pressure', 'winddirection', 'windspeed', 'skycoverage', 'precipitation-1h', 'precipitation-6h')
     max_retries = 5
@@ -23,16 +24,19 @@ class IsdLite:
     def _get_raw_metadata(self):
         for attempt in range(self.max_retries):
             try:
-                metadata = pd.read_fwf(self.raw_metadata_url, skiprows=19)
+                url = self.raw_metadata_url_src_1 if attempt % 2 == 0 else self.raw_metadata_url_src_2
+                metadata = pd.read_fwf(url, skiprows=19)
                 metadata = metadata.dropna(subset=['LAT', 'LON'])
-                metadata = metadata[~(metadata.x==0 & metadata.y==0)]
+                metadata = metadata[~(metadata.x == 0 & metadata.y == 0)]
                 metadata['x'], metadata['y'] = proj(metadata['LON'], metadata['LAT'], 4326, self.crs)
                 self.raw_metadata = gpd.GeoDataFrame(metadata, geometry=gpd.points_from_xy(metadata.x, metadata.y, crs=self.crs))
+                return
             except Exception as e:
                 if attempt < self.max_retries - 1:
                     sleep(2)
                 else:
                     raise RuntimeError(f"Failed to download metadata after {self.max_retries} attempts.") from e
+
 
     def _filter_metadata(self, geometry):
         if geometry is None:
