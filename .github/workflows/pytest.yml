@@ -17,12 +17,12 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.10'  # Change to the version of Python you are using
+        python-version: '3.12'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest geopandas tqdm
+        pip install pytest geopandas geopy tqdm
 
     - name: Install pyisd
       run: |
