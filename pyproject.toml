@@ -4,6 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["pyisd"]
+include-package-data = true
 
 [project]
 name = "isd-fetch"
