@@ -14,7 +14,7 @@ class IsdLite:
     raw_metadata_url_src_2 = "ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-history.txt"
     data_url = "https://www.ncei.noaa.gov/pub/data/noaa/isd-lite/{year}/"
     fields = ('temp', 'dewtemp', 'pressure', 'winddirection', 'windspeed', 'skycoverage', 'precipitation-1h', 'precipitation-6h')
-    max_retries = 5
+    max_retries = 10
 
     def __init__(self, crs=4326, verbose=0):
         self.crs = to_crs(crs)
