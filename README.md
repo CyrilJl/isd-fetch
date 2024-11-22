@@ -32,12 +32,12 @@ module.raw_metadata.sample(5)
 The output displays station metadata including station name, latitude, longitude, elevation, and the period of available records:
 
 ```
-         USAF   WBAN         STATION NAME CTRY   ST  CALL     LAT      LON  ELEV(M)     BEGIN       END        x       y                geometry
-27133  990076  99999   ENVIRON BUOY 31001  NaN  NaN   NaN   0.000  -35.000      0.0  20041110  20041110  -35.000   0.000           POINT (-35 0)
-7779   338480  99999              OCHAKOV   UP  NaN   NaN  46.633   31.550     41.0  19600128  20011222   31.550  46.633    POINT (31.55 46.633)
-23794  840260  99999  GENERAL RIVADENEIRA   EC  NaN   NaN  -0.983  -79.633     10.0  20040902  20241117  -79.633  -0.983  POINT (-79.633 -0.983)
-20203  725489  99999     ORANGE CITY MUNI   US   IA  KORC  42.983  -96.067    431.0  19950423  19971231  -96.067  42.983  POINT (-96.067 42.983)
-11356  489250  99999             OUDOMXAY   LA  NaN   NaN  20.683  102.000    550.0  19840701  20241117  102.000  20.683      POINT (102 20.683)
+         USAF   WBAN         STATION NAME CTRY   ST  ...      BEGIN        END       x       y                geometry
+5416   172650  99999             ADIYAMAN   TU  NaN  ... 2007-01-27 2024-11-17  38.283  37.750    POINT (38.283 37.75)
+1362   032130  99999             ESKMEALS   UK  NaN  ... 1973-01-02 1997-12-26  -3.400  54.317     POINT (-3.4 54.317)
+4729   153150  99999              SEMENIC   RO  NaN  ... 1973-07-21 2024-11-17  22.050  45.183    POINT (22.05 45.183)
+28589  999999  13855  TULLAHOMA AEDC SITE   US   TN  ... 1963-01-01 1969-08-01 -86.233  35.383  POINT (-86.233 35.383)
+6422   268530  99999             BEREZINO   BO  NaN  ... 1960-04-01 2024-11-17  28.983  53.833   POINT (28.983 53.833)
 ```
 
 The available stations locations can be visualized :
