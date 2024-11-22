@@ -53,6 +53,8 @@ from pyisd.misc import get_box
 geometry = get_box(place='Paris', width=1., crs=CRS)
 
 data = module.get_data(start=20230101, end=20241120, geometry=geometry, organize_by='field')
+data.keys()
+# dict_keys(['temp', 'dewtemp', 'pressure', 'winddirection', 'windspeed', 'skycoverage', 'precipitation-1h', 'precipitation-6h'])
 
 data['temp'].plot(figsize=(10, 4), legend=False, c='grey', lw=0.6)
 ```
