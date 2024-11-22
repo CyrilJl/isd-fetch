@@ -66,7 +66,7 @@ class IsdLite:
             try:
                 df = cls._download_read(urljoin(cls.data_url.format(year=year), f'{usaf_id}-99999-{year}.gz'))
                 ret.append(df)
-            except Exception as e:
+            except Exception as _:
                 pass
 
         if ret:
