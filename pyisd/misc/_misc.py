@@ -129,14 +129,14 @@ def get_coordinates(place, crs=4326, retries=10, retry_delay=1, errors='raise'):
     results = []
 
     def get_coordinates_single(place):
-        for _ in range(retries):
+        for k in range(retries):
             try:
                 location = geolocator.geocode(place)
                 if location:
                     return proj(location.longitude, location.latitude, 4326, crs)
             except Exception:
-                pass
-            sleep(retry_delay)
+                if k < retries-1:
+                    sleep(retry_delay)
         if errors == 'ignore':
             return (np.nan, np.nan)
         else:
