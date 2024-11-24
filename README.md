@@ -52,7 +52,7 @@ france_data = isd.get_data(
     organize_by='field'  # Organize data by weather variable
 )
 
-# Plot temperature data from all French stations
+# Access temperature data from all French stations
 france_data['temp'].sample(4)
 ```
 
