@@ -1,5 +1,6 @@
 [![PyPI version](https://badge.fury.io/py/isd-fetch.svg)](https://badge.fury.io/py/isd-fetch)
 [![Unit tests](https://github.com/CyrilJl/isd-fetch/actions/workflows/pytest.yml/badge.svg)](https://github.com/CyrilJl/isd-fetch/actions/workflows/pytest.yml)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/cdc692322be649cea8b8b6760bfb333e)](https://app.codacy.com/gh/CyrilJl/isd-fetch/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 # PyISD: A Python Package for NOAA's ISD Lite Dataset
 
