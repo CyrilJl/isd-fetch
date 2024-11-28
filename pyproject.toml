@@ -8,7 +8,7 @@ include = ["pyisd*"]
 
 [project]
 name = "isd-fetch"
-version = "0.1.4"
+version = "0.1.5"
 description = "A Python package for fetching ISD Lite data"
 readme = "README.md"
 license = { file = "LICENSE" }
