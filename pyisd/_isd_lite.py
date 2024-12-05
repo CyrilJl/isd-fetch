@@ -77,23 +77,28 @@ class IsdLite:
         self.verbose = verbose
 
     def _get_raw_metadata(self):
-        for attempt in range(self.max_retries):
+        """Retrieve and process weather station metadata from NOAA sources."""
+        for attempt in range(self.max_retries * 2):
             try:
                 url = self._raw_metadata_url_src_1 if attempt % 2 == 0 else self._raw_metadata_url_src_2
-                metadata = pd.read_fwf(url, skiprows=19)
-                metadata = metadata.dropna(subset=['LAT', 'LON'])
-                metadata = metadata[~((metadata.LON == 0) & (metadata.LAT == 0))]
+                
+                metadata = (pd.read_fwf(url, skiprows=19)
+                    .dropna(subset=['LAT', 'LON'])
+                    .query('not (LON == 0 and LAT == 0)')
+                )
+                
                 metadata['x'], metadata['y'] = proj(metadata['LON'], metadata['LAT'], 4326, self.crs)
-                metadata = metadata.drop(columns=['LON', 'LAT'])
-                metadata['BEGIN'] = pd.to_datetime(metadata['BEGIN'].astype(str))
-                metadata['END'] = pd.to_datetime(metadata['END'].astype(str))
-                self.raw_metadata = gpd.GeoDataFrame(metadata, geometry=gpd.points_from_xy(metadata.x, metadata.y, crs=self.crs))
-                return
-            except Exception as e:
-                if attempt < self.max_retries - 1:
-                    sleep(2)
-                else:
-                    raise RuntimeError(f"Failed to download metadata after {self.max_retries} attempts.") from e
+                metadata[['BEGIN', 'END']] = metadata[['BEGIN', 'END']].astype(str).apply(pd.to_datetime)
+                
+                self.raw_metadata = gpd.GeoDataFrame(
+                    metadata.drop(columns=['LON', 'LAT']), 
+                    geometry=gpd.points_from_xy(metadata.x, metadata.y, crs=self.crs)
+                )
+            
+            except Exception:
+                if attempt == self.max_retries * 2 - 1:
+                    raise RuntimeError(f"Failed to download metadata after {self.max_retries} attempts.")
+                sleep(2)
 
     def _filter_metadata(self, countries, geometry):
         if (geometry is None) and (countries is None):
