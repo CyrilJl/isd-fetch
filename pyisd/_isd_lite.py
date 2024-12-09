@@ -1,6 +1,5 @@
-from io import StringIO
-
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from io import StringIO
 from time import sleep
 from urllib.error import URLError
 from urllib.parse import urljoin
@@ -95,10 +94,8 @@ class IsdLite:
                 metadata['x'], metadata['y'] = proj(metadata['LON'], metadata['LAT'], 4326, self.crs)
                 metadata[['BEGIN', 'END']] = metadata[['BEGIN', 'END']].astype(str).apply(pd.to_datetime)
 
-                self.raw_metadata = gpd.GeoDataFrame(
-                    metadata.drop(columns=['LON', 'LAT']),
-                    geometry=gpd.points_from_xy(metadata.x, metadata.y, crs=self.crs)
-                )
+                self.raw_metadata = gpd.GeoDataFrame(metadata.drop(columns=['LON', 'LAT']),
+                                                     geometry=gpd.points_from_xy(metadata.x, metadata.y, crs=self.crs))
                 break  # Exit the loop if successful
 
             except URLError as e:
