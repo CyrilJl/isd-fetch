@@ -1,6 +1,8 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from time import sleep
+from urllib.error import URLError
 from urllib.parse import urljoin
+from urllib.request import urlopen
 
 import geopandas as gpd
 import pandas as pd
@@ -65,8 +67,7 @@ class IsdLite:
         station_data = data['724940']  # When organize_by='location'
         station_temp = station_data['temp']
     """
-    _raw_metadata_url_src_1 = 'https://www.ncei.noaa.gov/pub/data/noaa/isd-history.txt'
-    _raw_metadata_url_src_2 = "ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-history.txt"
+    _raw_metadata_url_src = 'https://www.ncei.noaa.gov/pub/data/noaa/isd-history.txt'
     data_url = "https://www.ncei.noaa.gov/pub/data/noaa/isd-lite/{year}/"
     fields = ('temp', 'dewtemp', 'pressure', 'winddirection', 'windspeed', 'skycoverage', 'precipitation-1h', 'precipitation-6h')
     max_retries = 10
@@ -78,27 +79,30 @@ class IsdLite:
 
     def _get_raw_metadata(self):
         """Retrieve and process weather station metadata from NOAA sources."""
-        for attempt in range(self.max_retries * 2):
+        for attempt in range(self.max_retries):
             try:
-                url = self._raw_metadata_url_src_1 if attempt % 2 == 0 else self._raw_metadata_url_src_2
-                
-                metadata = (pd.read_fwf(url, skiprows=19)
-                    .dropna(subset=['LAT', 'LON'])
-                    .query('not (LON == 0 and LAT == 0)')
-                )
-                
+                # Open the URL and read the content using urllib
+                with urlopen(self._raw_metadata_url_src, timeout=2) as response:
+                    content = response.read().decode('utf-8')
+
+                # Process the content with pandas
+                metadata = (pd.read_fwf(StringIO(content), skiprows=19)
+                            .dropna(subset=['LAT', 'LON'])
+                            .query('not (LON == 0 and LAT == 0)'))
+
                 metadata['x'], metadata['y'] = proj(metadata['LON'], metadata['LAT'], 4326, self.crs)
                 metadata[['BEGIN', 'END']] = metadata[['BEGIN', 'END']].astype(str).apply(pd.to_datetime)
-                
+
                 self.raw_metadata = gpd.GeoDataFrame(
-                    metadata.drop(columns=['LON', 'LAT']), 
+                    metadata.drop(columns=['LON', 'LAT']),
                     geometry=gpd.points_from_xy(metadata.x, metadata.y, crs=self.crs)
                 )
-            
-            except Exception:
-                if attempt == self.max_retries * 2 - 1:
-                    raise RuntimeError(f"Failed to download metadata after {self.max_retries} attempts.")
-                sleep(2)
+                break  # Exit the loop if successful
+
+            except URLError as e:
+                if attempt == self.max_retries - 1:
+                    raise RuntimeError(f"Failed to download metadata after {self.max_retries} attempts: {e}")
+                sleep(0.1)
 
     def _filter_metadata(self, countries, geometry):
         if (geometry is None) and (countries is None):
