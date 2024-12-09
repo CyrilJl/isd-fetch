@@ -1,3 +1,5 @@
+from io import StringIO
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from time import sleep
 from urllib.error import URLError
