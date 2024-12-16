@@ -1,6 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
-from time import sleep
 from urllib.error import URLError
 from urllib.parse import urljoin
 from urllib.request import urlopen
@@ -71,7 +70,7 @@ class IsdLite:
     _raw_metadata_url_src = 'https://www.ncei.noaa.gov/pub/data/noaa/isd-history.txt'
     data_url = "https://www.ncei.noaa.gov/pub/data/noaa/isd-lite/{year}/"
     fields = ('temp', 'dewtemp', 'pressure', 'winddirection', 'windspeed', 'skycoverage', 'precipitation-1h', 'precipitation-6h')
-    max_retries = 10
+    max_retries = 100
 
     def __init__(self, crs=4326, verbose=0):
         self.crs = to_crs(crs)
@@ -101,7 +100,6 @@ class IsdLite:
             except URLError as e:
                 if attempt == self.max_retries - 1:
                     raise RuntimeError(f"Failed to download metadata after {self.max_retries} attempts: {e}")
-                sleep(0.1)
 
     def _filter_metadata(self, countries, geometry):
         if (geometry is None) and (countries is None):
