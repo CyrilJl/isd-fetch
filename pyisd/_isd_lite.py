@@ -68,7 +68,6 @@ class IsdLite:
         station_temp = station_data['temp']
     """
 
-    _raw_metadata_url_src = "https://www.ncei.noaa.gov/pub/data/noaa/isd-history.txt"
     data_url = "https://www.ncei.noaa.gov/pub/data/noaa/isd-lite/{year}/"
     fields = (
         "temp",
@@ -92,7 +91,7 @@ class IsdLite:
         for attempt in range(self.max_retries):
             try:
                 # Open the URL and read the content using urllib
-                with urlopen(self._raw_metadata_url_src, timeout=2) as response:
+                with urlopen("https://www.ncei.noaa.gov/pub/data/noaa/isd-history.txt", timeout=2) as response:
                     content = response.read().decode("utf-8")
 
                 # Process the content with pandas
