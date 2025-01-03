@@ -1,10 +1,12 @@
 name: Run Pytest
 
 on:
-  workflow_dispatch:
-  pull_request:
+  workflow_dispatch: # Déclencheur manuel
+  pull_request: # Déclencheur lors d'une pull request vers la branche principale
     branches:
       - main
+  schedule: # Déclencheur programmé
+    - cron: "0 8 * * 1" # Chaque lundi à 8h00 UTC
 
 jobs:
   test:

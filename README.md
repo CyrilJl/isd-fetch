@@ -4,33 +4,35 @@
 
 # PyISD: A Python Package for NOAA's ISD Lite Dataset
 
-**PyISD** is a Python package designed for loading and processing NOAA's ISD Lite dataset. The dataset, as described by NOAA, is a streamlined version of the full Integrated Surface Database (ISD). It includes eight common surface parameters in a fixed-width format, free of duplicate values, sub-hourly data, and complicated flags, making it suitable for general research and scientific purposes. For more details, visit the [official ISD homepage](https://www.ncei.noaa.gov/products/land-based-station/integrated-surface-database).
+**PyISD** is a Python package designed for efficiently accessing and processing NOAA's ISD Lite dataset. The ISD Lite dataset, a streamlined version of the full Integrated Surface Database (ISD), provides hourly weather observations worldwide. It includes eight essential surface parameters in a fixed-width format, free of duplicate values, sub-hourly data, and complex flags. For more information, visit the [official ISD homepage](https://www.ncei.noaa.gov/products/land-based-station/integrated-surface-database).
 
 ## Installation
+
 ```bash
 pip install isd-fetch
 ```
 
-## **Features**
-- Load and query the ISD Lite dataset with ease.
-- Retrieve and process metadata for stations worldwide.
-- Filter data based on spatial and temporal constraints.
+## Features
 
-## **Example Usage**
+- Easy access to global weather station data with spatial and temporal filtering
+- Support for various coordinate reference systems (CRS)
+- Parallel data downloading for improved performance
+- Flexible data organization by location or weather variable
+- Comprehensive station metadata handling
 
-### **1. Importing and Loading Metadata**
-You can start by importing the `IsdLite` module, fetching metadata for weather stations worldwide and displaying a sample of the station metadata:
+## Quick Start Guide
+
+### Basic Usage
 
 ```python
 from pyisd import IsdLite
 
-CRS = 4326
+# Initialize the client
+isd = IsdLite(crs=4326, verbose=True)
 
-module = IsdLite(crs=CRS, verbose=True)
-module.raw_metadata.sample(5)
+# View available stations
+isd.raw_metadata.sample(5)
 ```
-
-The output displays station metadata including station name, latitude, longitude, elevation, and the period of available records:
 
 ```
          USAF   WBAN         STATION NAME CTRY   ST  ...      BEGIN        END       x       y                geometry
@@ -41,33 +43,84 @@ The output displays station metadata including station name, latitude, longitude
 6422   268530  99999             BEREZINO   BO  NaN  ... 1960-04-01 2024-11-17  28.983  53.833   POINT (28.983 53.833)
 ```
 
-The available stations locations can be visualized :
+### Fetching Weather Data
 
-![map_isd](https://github.com/CyrilJl/pyisd/blob/main/assets/noaa_isd_locations.png?raw=true)
-
-### **2. Fetching and Visualizing Data**
-To retrieve data, you can specify the time period and spatial constraints. Here, we fetch temperature data (`temp`) for the bounding box around Paris between January 1, 2023, and November 20, 2024:
+There are multiple ways to fetch data based on your needs:
 
 ```python
-from pyisd.misc import get_box
+# Get data for all French weather stations
+france_data = isd.get_data(
+    start='2023-01-01',
+    end='2023-12-31',
+    countries='FR',  # ISO country code for France
+    organize_by='field'  # Organize data by weather variable
+)
 
-geometry = get_box(place='Paris', width=1., crs=CRS)
-
-data = module.get_data(start=20230101, end=20241120, geometry=geometry, organize_by='field')
-data.keys()
-# dict_keys(['temp', 'dewtemp', 'pressure', 'winddirection', 'windspeed', 'skycoverage', 'precipitation-1h', 'precipitation-6h'])
-
-data['temp'].plot(figsize=(10, 4), legend=False, c='grey', lw=0.6)
+# Access temperature data from all French stations
+france_data['temp'].sample(4)
 ```
 
-![time_series](https://github.com/CyrilJl/pyisd/blob/main/assets/temp_time_series.png?raw=true)
+```
+                     070200  070240  070270  ...  077680  077750  077700
+2023-05-12 09:00:00    11.4    11.6    13.1  ...    19.7    19.7    16.5
+2024-06-26 15:00:00    21.8    25.8    26.7  ...    25.8    25.4    23.2
+2023-10-09 18:00:00    18.0    16.7    17.9  ...    22.0    20.9    21.8
+2023-12-19 14:00:00     NaN    12.0    11.8  ...    14.6    15.7    13.6
+```
 
-#### **Flexibility of `geometry`**
-The `geometry` parameter is highly flexible and can be set in different ways:
+```python
+# You can also query multiple countries
+european_data = isd.get_data(
+    start='2023-01-01',
+    end='2023-12-31',
+    countries=['FR', 'DE', 'IT'],  # France, Germany, Italy
+    organize_by='field'
+)
+```
 
-1. **Bounding Box**: Use the `get_box()` function as shown above to define a simple rectangular bounding box around a location.
-2. **Custom Geometries**: You can pass any `shapely.geometry` object (e.g., `Polygon`, `MultiPolygon`) or a `geopandas` `GeoDataFrame` to define more specific regions of interest.
-3. **`None`**: If `geometry` is set to `None`, the function retrieves data for all available stations globally.  
-   ⚠️ **Note**: Setting `geometry=None` is **not advised** unless strictly necessary, as the download time and data size can be extremely large.
+## Spatial Filtering Options
 
-By carefully specifying `geometry`, you can focus on the data most relevant to your study while avoiding unnecessarily large downloads.
+PyISD offers flexible spatial filtering through the `geometry` parameter:
+
+1. **Bounding Box**: Using coordinates (xmin, ymin, xmax, ymax)
+
+```python
+geometry = (-2.5, 48.5, 2.5, 49.5)  # Paris region
+```
+
+2. **GeoDataFrame/Geometry**: Using any shapely or geopandas geometry
+
+```python
+import geopandas as gpd
+city = gpd.read_file('city_boundary.geojson')
+data = isd.get_data(geometry=city)
+```
+
+3. **Place Name**: Using the `get_box()` helper function
+
+```python
+geometry = get_box('London', width=2.0, crs=4326)
+```
+
+4. **Global Data**: Setting geometry to None (⚠️ use with caution - large downloads)
+
+```python
+data = isd.get_data(geometry=None)  # Downloads data for all stations
+```
+
+## Available Weather Variables
+
+- `temp`: Air temperature (°C)
+- `dewtemp`: Dew point temperature (°C)
+- `pressure`: Sea level pressure (hPa)
+- `winddirection`: Wind direction (degrees)
+- `windspeed`: Wind speed (m/s)
+- `skycoverage`: Sky coverage/ceiling (code)
+- `precipitation-1h`: One-hour precipitation (mm)
+- `precipitation-6h`: Six-hour precipitation (mm)
+
+## Station Coverage
+
+The ISD Lite network includes thousands of weather stations worldwide:
+
+![ISD Station Locations](https://github.com/CyrilJl/pyisd/blob/main/assets/noaa_isd_locations.png?raw=true)

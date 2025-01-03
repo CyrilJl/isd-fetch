@@ -7,7 +7,7 @@ where = ["."]
 
 [project]
 name = "isd-fetch"
-version = "0.1.4"
+version = "0.1.7"
 description = "A Python package for fetching ISD Lite data: weather data from NOAA all over the world."
 readme = "README.md"
 license = { file = "LICENSE" }
