@@ -4,30 +4,23 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["pyisd*"]
 
 [project]
 name = "isd-fetch"
 version = "0.1.4"
-description = "A Python package for fetching ISD Lite data"
+description = "A Python package for fetching ISD Lite data: weather data from NOAA all over the world."
 readme = "README.md"
 license = { file = "LICENSE" }
-authors = [
-    { name = "Cyril Joly" }
-]
+authors = [{ name = "Cyril Joly" }]
 keywords = ["ISD Lite", "weather data", "NOAA"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent"
+    "Operating System :: OS Independent",
 ]
-dependencies = [
-    "geopandas",
-    "tqdm"
-]
+dependencies = ["geopandas", "tqdm"]
 requires-python = ">=3.7"
 
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "--strict-markers"
-testpaths = ["tests"]
+[tool.ruff]
+line-length = 120
+fix = true

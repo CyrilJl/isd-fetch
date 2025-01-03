@@ -65,10 +65,20 @@ class IsdLite:
         station_data = data['724940']  # When organize_by='location'
         station_temp = station_data['temp']
     """
-    _raw_metadata_url_src_1 = 'https://www.ncei.noaa.gov/pub/data/noaa/isd-history.txt'
+
+    _raw_metadata_url_src_1 = "https://www.ncei.noaa.gov/pub/data/noaa/isd-history.txt"
     _raw_metadata_url_src_2 = "ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-history.txt"
     data_url = "https://www.ncei.noaa.gov/pub/data/noaa/isd-lite/{year}/"
-    fields = ('temp', 'dewtemp', 'pressure', 'winddirection', 'windspeed', 'skycoverage', 'precipitation-1h', 'precipitation-6h')
+    fields = (
+        "temp",
+        "dewtemp",
+        "pressure",
+        "winddirection",
+        "windspeed",
+        "skycoverage",
+        "precipitation-1h",
+        "precipitation-6h",
+    )
     max_retries = 10
 
     def __init__(self, crs=4326, verbose=0):
@@ -81,13 +91,15 @@ class IsdLite:
             try:
                 url = self._raw_metadata_url_src_1 if attempt % 2 == 0 else self._raw_metadata_url_src_2
                 metadata = pd.read_fwf(url, skiprows=19)
-                metadata = metadata.dropna(subset=['LAT', 'LON'])
+                metadata = metadata.dropna(subset=["LAT", "LON"])
                 metadata = metadata[~((metadata.LON == 0) & (metadata.LAT == 0))]
-                metadata['x'], metadata['y'] = proj(metadata['LON'], metadata['LAT'], 4326, self.crs)
-                metadata = metadata.drop(columns=['LON', 'LAT'])
-                metadata['BEGIN'] = pd.to_datetime(metadata['BEGIN'].astype(str))
-                metadata['END'] = pd.to_datetime(metadata['END'].astype(str))
-                self.raw_metadata = gpd.GeoDataFrame(metadata, geometry=gpd.points_from_xy(metadata.x, metadata.y, crs=self.crs))
+                metadata["x"], metadata["y"] = proj(metadata["LON"], metadata["LAT"], 4326, self.crs)
+                metadata = metadata.drop(columns=["LON", "LAT"])
+                metadata["BEGIN"] = pd.to_datetime(metadata["BEGIN"].astype(str))
+                metadata["END"] = pd.to_datetime(metadata["END"].astype(str))
+                self.raw_metadata = gpd.GeoDataFrame(
+                    metadata, geometry=gpd.points_from_xy(metadata.x, metadata.y, crs=self.crs)
+                )
                 return
             except Exception as e:
                 if attempt < self.max_retries - 1:
@@ -97,23 +109,23 @@ class IsdLite:
 
     def _filter_metadata(self, countries, geometry):
         if (geometry is None) and (countries is None):
-            return self.raw_metadata['USAF'].unique()
+            return self.raw_metadata["USAF"].unique()
         elif geometry is None:
             if isinstance(countries, str):
                 countries = (countries,)
-            return self.raw_metadata[self.raw_metadata['CTRY'].isin(countries)]['USAF'].unique()
+            return self.raw_metadata[self.raw_metadata["CTRY"].isin(countries)]["USAF"].unique()
         else:
             if isinstance(geometry, gpd.base.GeoPandasBase):
-                return gpd.clip(self.raw_metadata, geometry.to_crs(self.crs))['USAF'].unique()
+                return gpd.clip(self.raw_metadata, geometry.to_crs(self.crs))["USAF"].unique()
             else:
-                return gpd.clip(self.raw_metadata, geometry)['USAF'].unique()
+                return gpd.clip(self.raw_metadata, geometry)["USAF"].unique()
 
     @classmethod
     def _download_read(cls, url):
-        time_features = ['year', 'month', 'day', 'hour']
-        df = pd.read_csv(url, sep='\\s+', header=None, na_values=-9999)
+        time_features = ["year", "month", "day", "hour"]
+        df = pd.read_csv(url, sep="\\s+", header=None, na_values=-9999)
         df.columns = time_features + list(cls.fields)
-        df[['temp', 'dewtemp', 'pressure', 'windspeed']] /= 10.
+        df[["temp", "dewtemp", "pressure", "windspeed"]] /= 10.0
         df.index = pd.to_datetime(df[time_features])
         df = df.drop(columns=time_features)
         return df
@@ -123,7 +135,7 @@ class IsdLite:
         ret = []
         for year in years:
             try:
-                df = cls._download_read(urljoin(cls.data_url.format(year=year), f'{usaf_id}-99999-{year}.gz'))
+                df = cls._download_read(urljoin(cls.data_url.format(year=year), f"{usaf_id}-99999-{year}.gz"))
                 ret.append(df)
             except Exception as _:
                 pass
@@ -133,7 +145,7 @@ class IsdLite:
         else:
             return pd.DataFrame()
 
-    def get_data(self, start, end=None, countries=None, geometry=None, organize_by='location', n_jobs=6):
+    def get_data(self, start, end=None, countries=None, geometry=None, organize_by="location", n_jobs=6):
         """
         Fetches weather data from the ISD-Lite dataset for the specified time range and location.
 
@@ -172,8 +184,8 @@ class IsdLite:
             # Get data within a bounding box
             data = isd.get_data(start='2020-01-01', geometry=(-100, 30, -90, 40))
         """
-        check_params(param=organize_by, params=('field', 'location'))
-        time = daterange(start, end, freq='h')
+        check_params(param=organize_by, params=("field", "location"))
+        time = daterange(start, end, freq="h")
         years = time.year.unique()
         usaf_ids = self._filter_metadata(countries=countries, geometry=geometry)
 
@@ -189,7 +201,10 @@ class IsdLite:
                 if data.size > 0:
                     ret[usaf_id] = data
 
-        if organize_by == 'field':
-            ret = {field: pd.concat([ret[usaf_id][field].rename(usaf_id) for usaf_id in ret], axis=1) for field in self.fields}
+        if organize_by == "field":
+            ret = {
+                field: pd.concat([ret[usaf_id][field].rename(usaf_id) for usaf_id in ret], axis=1)
+                for field in self.fields
+            }
 
         return ret

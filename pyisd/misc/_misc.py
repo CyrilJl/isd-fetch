@@ -49,7 +49,7 @@ def check_params(param, params=None, types=None):
     """
     if (types is not None) and (not isinstance(param, types)):
         if isinstance(types, type):
-            accepted = f'{types}'
+            accepted = f"{types}"
         else:
             accepted = f"{', '.join([str(t) for t in types])}"
         msg = f"`{param}` is not of an acceptable type, must be of type {accepted}!"
@@ -60,7 +60,7 @@ def check_params(param, params=None, types=None):
     return param
 
 
-def daterange(date_start, date_end=None, freq='h') -> pd.DatetimeIndex:
+def daterange(date_start, date_end=None, freq="h") -> pd.DatetimeIndex:
     """
     Creates a date range with a given frequency between `date_start` and `date_end`.
 
@@ -93,10 +93,10 @@ def daterange(date_start, date_end=None, freq='h') -> pd.DatetimeIndex:
     """
     start = pd.to_datetime(str(date_start))
     end = start if date_end is None else pd.to_datetime(str(date_end))
-    return pd.date_range(start, end+pd.Timedelta(hours=24), freq=freq, inclusive='left')
+    return pd.date_range(start, end + pd.Timedelta(hours=24), freq=freq, inclusive="left")
 
 
-def get_coordinates(place, crs=4326, retries=10, retry_delay=1, errors='raise'):
+def get_coordinates(place, crs=4326, retries=10, retry_delay=1, errors="raise"):
     """
     Retrieves geographic coordinates (longitude, latitude) for a given place.
 
@@ -124,8 +124,9 @@ def get_coordinates(place, crs=4326, retries=10, retry_delay=1, errors='raise'):
             >>> [(2.3488, 48.85341), (4.8357, 45.76404), (5.36978, 43.29695)]
     """
     from geopy.geocoders import Nominatim
-    check_params(errors, params=('ignore', 'raise'))
-    geolocator = Nominatim(user_agent='pyisd')
+
+    check_params(errors, params=("ignore", "raise"))
+    geolocator = Nominatim(user_agent="pyisd")
     results = []
 
     def get_coordinates_single(place):
@@ -135,9 +136,9 @@ def get_coordinates(place, crs=4326, retries=10, retry_delay=1, errors='raise'):
                 if location:
                     return proj(location.longitude, location.latitude, 4326, crs)
             except Exception:
-                if k < retries-1:
+                if k < retries - 1:
                     sleep(retry_delay)
-        if errors == 'ignore':
+        if errors == "ignore":
             return (np.nan, np.nan)
         else:
             raise ValueError(f"Failed to retrieve coordinates for '{place}'")
@@ -164,13 +165,15 @@ def get_box(place, width=10e3, crs=4326) -> box:
         box: A bounding box centered around the specified place.
     """
     x0, y0 = get_coordinates(place, crs=crs)
-    return box(x0-width/2, y0-width/2, x0+width/2, y0+width/2)
+    return box(x0 - width / 2, y0 - width / 2, x0 + width / 2, y0 + width / 2)
 
 
-def proj(x: Union[float, int, Iterable[float]],
-         y: Union[float, int, Iterable[float]],
-         proj_in: Union[str, int, pyproj.CRS],
-         proj_out: Union[str, int, pyproj.CRS]) -> Tuple[Iterable[float], Iterable[float]]:
+def proj(
+    x: Union[float, int, Iterable[float]],
+    y: Union[float, int, Iterable[float]],
+    proj_in: Union[str, int, pyproj.CRS],
+    proj_out: Union[str, int, pyproj.CRS],
+) -> Tuple[Iterable[float], Iterable[float]]:
     """
     Projects coordinates from one coordinate system to another.
 
