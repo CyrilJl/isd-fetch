@@ -96,7 +96,7 @@ class IsdLite:
 
                 # Process the content with pandas
                 metadata = (
-                    pd.read_fwf(StringIO(content), skiprows=19)
+                    pd.read_fwf(StringIO(content), skiprows=19, dtype={"USAF": str, "WBAN": str})
                     .dropna(subset=["LAT", "LON"])
                     .query("not (LON == 0 and LAT == 0)")
                 )
@@ -133,7 +133,7 @@ class IsdLite:
                 filt = gpd.clip(df, geometry)
         # Extract unique station identifier pairs
         pairs = filt.drop_duplicates(subset=["USAF", "WBAN"])[["USAF", "WBAN"]].values
-        return [(str(usaf), str(wban)) for usaf, wban in pairs]
+        return [(usaf, wban) for usaf, wban in pairs]
 
     @classmethod
     def _download_read(cls, url):
