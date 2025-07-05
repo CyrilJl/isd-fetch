@@ -115,17 +115,25 @@ class IsdLite:
                     raise RuntimeError(f"Failed to download metadata after {self.max_retries} attempts: {e}")
 
     def _filter_metadata(self, countries, geometry):
+        """
+        Internal: filter raw_metadata by country or geometry and return list of (USAF, WBAN) tuples.
+        """
+        df = self.raw_metadata
+        # Apply filters
         if (geometry is None) and (countries is None):
-            return self.raw_metadata["USAF"].unique()
+            filt = df
         elif geometry is None:
             if isinstance(countries, str):
                 countries = (countries,)
-            return self.raw_metadata[self.raw_metadata["CTRY"].isin(countries)]["USAF"].unique()
+            filt = df[df["CTRY"].isin(countries)]
         else:
             if isinstance(geometry, gpd.base.GeoPandasBase):
-                return gpd.clip(self.raw_metadata, geometry.to_crs(self.crs))["USAF"].unique()
+                filt = gpd.clip(df, geometry.to_crs(self.crs))
             else:
-                return gpd.clip(self.raw_metadata, geometry)["USAF"].unique()
+                filt = gpd.clip(df, geometry)
+        # Extract unique station identifier pairs
+        pairs = filt.drop_duplicates(subset=["USAF", "WBAN"])[["USAF", "WBAN"]].values
+        return [(str(usaf), str(wban)) for usaf, wban in pairs]
 
     @classmethod
     def _download_read(cls, url):
@@ -138,11 +146,11 @@ class IsdLite:
         return df
 
     @classmethod
-    def _download_data_id(cls, usaf_id, years):
+    def _download_data_id(cls, usaf_id, wban_id, years):
         ret = []
         for year in years:
             try:
-                df = cls._download_read(urljoin(cls.data_url.format(year=year), f"{usaf_id}-99999-{year}.gz"))
+                df = cls._download_read(urljoin(cls.data_url.format(year=year), f"{usaf_id}-{wban_id}-{year}.gz"))
                 ret.append(df)
             except Exception as _:
                 pass
@@ -152,7 +160,7 @@ class IsdLite:
         else:
             return pd.DataFrame()
 
-    def get_data(self, start, end=None, countries=None, geometry=None, organize_by="location", n_jobs=6):
+    def get_data(self, start, end=None, station_id=None, countries=None, geometry=None, organize_by="location", n_jobs=6):
         """
         Fetches weather data from the ISD-Lite dataset for the specified time range and location.
 
@@ -194,23 +202,35 @@ class IsdLite:
         check_params(param=organize_by, params=("field", "location"))
         time = daterange(start, end, freq="h")
         years = time.year.unique()
-        usaf_ids = self._filter_metadata(countries=countries, geometry=geometry)
 
-        def fetch_data(usaf_id):
-            return usaf_id, self._download_data_id(usaf_id=usaf_id, years=years).reindex(index=time)
+        # Determine station list: optional single station override
+        if station_id is not None:
+            try:
+                usaf_id, wban_id = station_id.split('-', 1)
+            except ValueError:
+                raise ValueError("station_id must be in format 'USAF-WBAN'")
+            stations = [(usaf_id, wban_id)]
+        else:
+            stations = self._filter_metadata(countries=countries, geometry=geometry)
+
+        def fetch_data(station):
+            usaf_id, wban_id = station
+            df = self._download_data_id(usaf_id=usaf_id, wban_id=wban_id, years=years)
+            return usaf_id, wban_id, df.reindex(index=time)
 
         ret = {}
         with ThreadPoolExecutor(max_workers=n_jobs) as executor:
-            futures = {executor.submit(fetch_data, usaf_id): usaf_id for usaf_id in usaf_ids}
+            # Launch fetch tasks for each station tuple
+            futures = {executor.submit(fetch_data, station): station for station in stations}
 
             for future in tqdm(as_completed(futures), total=len(futures), disable=(not self.verbose)):
-                usaf_id, data = future.result()
+                usaf_id, wban_id, data = future.result()
                 if data.size > 0:
-                    ret[usaf_id] = data
+                    ret[f'{usaf_id}-{wban_id}'] = data
 
         if organize_by == "field":
             ret = {
-                field: pd.concat([ret[usaf_id][field].rename(usaf_id) for usaf_id in ret], axis=1)
+                field: pd.concat([ret[station_id][field].rename(station_id) for station_id in ret], axis=1)
                 for field in self.fields
             }
 
