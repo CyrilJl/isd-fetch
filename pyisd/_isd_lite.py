@@ -96,7 +96,7 @@ class IsdLite:
 
                 # Process the content with pandas
                 metadata = (
-                    pd.read_fwf(StringIO(content), skiprows=19, dtype={"USAF": str, "WBAN": str})
+                    pd.read_fwf(StringIO(content), header=0, skiprows=20, dtype={"USAF": str, "WBAN": str})
                     .dropna(subset=["LAT", "LON"])
                     .query("not (LON == 0 and LAT == 0)")
                 )
