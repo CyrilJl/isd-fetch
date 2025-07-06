@@ -167,6 +167,8 @@ class IsdLite:
         Args:
             start (datetime): The start date for the data retrieval.
             end (datetime, optional): The end date for the data retrieval. If not provided, defaults to the start date.
+            station_id (str, optional): A specific weather station ID in the format 'USAF-WBAN' to retrieve data for.
+                If provided, overrides any spatial or country filters. If None, data for all stations will
             countries (str or iterable of str, optional): Country code(s) to filter stations by. Must be valid codes from
                 the ISD-Lite metadata (found in raw_metadata['CTRY']). Can be either a single country code as string
                 or multiple codes as an iterable. If None, stations from all countries will be considered.
