@@ -39,3 +39,11 @@ def test_isdlite_station_id():
     # Ensure the key is the full station_id and data is returned
     assert "723270-13897" in data
     assert data["723270-13897"].size > 0
+
+def test_isdlite_wban_leading_zero():
+    usaf_id = '722692'
+    wban_id = '00367'
+    module = IsdLite(verbose=True)
+    meta = module.raw_metadata
+    station_meta = meta[(meta["USAF"] == usaf_id) & (meta["WBAN"] == wban_id)]
+    assert not station_meta.empty, f"No metadata found for {usaf_id}-{wban_id}"
