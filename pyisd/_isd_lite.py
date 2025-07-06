@@ -160,7 +160,16 @@ class IsdLite:
         else:
             return pd.DataFrame()
 
-    def get_data(self, start, end=None, station_id=None, countries=None, geometry=None, organize_by="location", n_jobs=6):
+    def get_data(
+        self,
+        start,
+        end=None,
+        station_id=None,
+        countries=None,
+        geometry=None,
+        organize_by="location",
+        n_jobs=6,
+    ):
         """
         Fetches weather data from the ISD-Lite dataset for the specified time range and location.
 
@@ -208,7 +217,7 @@ class IsdLite:
         # Determine station list: optional single station override
         if station_id is not None:
             try:
-                usaf_id, wban_id = station_id.split('-', 1)
+                usaf_id, wban_id = station_id.split("-", 1)
             except ValueError:
                 raise ValueError("station_id must be in format 'USAF-WBAN'")
             stations = [(usaf_id, wban_id)]
@@ -228,7 +237,7 @@ class IsdLite:
             for future in tqdm(as_completed(futures), total=len(futures), disable=(not self.verbose)):
                 usaf_id, wban_id, data = future.result()
                 if data.size > 0:
-                    ret[f'{usaf_id}-{wban_id}'] = data
+                    ret[f"{usaf_id}-{wban_id}"] = data
 
         if organize_by == "field":
             ret = {

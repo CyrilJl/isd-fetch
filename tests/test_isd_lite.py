@@ -22,12 +22,14 @@ def test_isdlite_field(crs):
     data = module.get_data(start=20230101, end=20241231, geometry=geometry, organize_by="field")
     assert data["temp"].size > 0
 
+
 def test_isdlite_wban_id(crs):
     geometry = get_box(place="Nashville", width=1.0, crs=crs)
     module = IsdLite(verbose=True)
     data = module.get_data(start=20230101, end=20241231, geometry=geometry, organize_by="location")
     assert "723270-13897" in data
     assert data["723270-13897"].size > 0
+
 
 def test_isdlite_station_id():
     """
@@ -40,9 +42,10 @@ def test_isdlite_station_id():
     assert "723270-13897" in data
     assert data["723270-13897"].size > 0
 
+
 def test_isdlite_wban_leading_zero():
-    usaf_id = '722692'
-    wban_id = '00367'
+    usaf_id = "722692"
+    wban_id = "00367"
     module = IsdLite(verbose=True)
     meta = module.raw_metadata
     station_meta = meta[(meta["USAF"] == usaf_id) & (meta["WBAN"] == wban_id)]
