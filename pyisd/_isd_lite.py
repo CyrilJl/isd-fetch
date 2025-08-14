@@ -36,36 +36,38 @@ class IsdLite:
             0 for silent, 1 for progress bars. Defaults to 0.
 
     Examples:
-        # Initialize the client
-        isd = IsdLite()
+        .. code-block:: python
 
-        # Get data for all US stations for January 2020
-        data = isd.get_data(
-            start='2020-01-01',
-            end='2020-01-31',
-            countries='US'
-        )
+            # Initialize the client
+            isd = IsdLite()
 
-        # Get data within a specific region, organized by weather variable
-        texas_data = isd.get_data(
-            start='2020-01-01',
-            geometry=(-106.6, 25.8, -93.5, 36.5),  # Texas bounding box
-            organize_by='field'
-        )
+            # Get data for all US stations for January 2020
+            data = isd.get_data(
+                start='2020-01-01',
+                end='2020-01-31',
+                countries='US'
+            )
 
-        # Use with geopandas for spatial filtering
-        import geopandas as gpd
-        city = gpd.read_file('city_boundary.geojson')
-        city_data = isd.get_data(
-            start='2020-01-01',
-            geometry=city
-        )
+            # Get data within a specific region, organized by weather variable
+            texas_data = isd.get_data(
+                start='2020-01-01',
+                geometry=(-106.6, 25.8, -93.5, 36.5),  # Texas bounding box
+                organize_by='field'
+            )
 
-        # Access specific weather variables
-        temperatures = texas_data['temp']  # When organize_by='field'
-        # Or
-        station_data = data['724940']  # When organize_by='location'
-        station_temp = station_data['temp']
+            # Use with geopandas for spatial filtering
+            import geopandas as gpd
+            city = gpd.read_file('city_boundary.geojson')
+            city_data = isd.get_data(
+                start='2020-01-01',
+                geometry=city
+            )
+
+            # Access specific weather variables
+            temperatures = texas_data['temp']  # When organize_by='field'
+            # Or
+            station_data = data['724940']  # When organize_by='location'
+            station_temp = station_data['temp']
     """
 
     data_url = "https://www.ncei.noaa.gov/pub/data/noaa/isd-lite/{year}/"
@@ -201,14 +203,17 @@ class IsdLite:
             ValueError: If `organize_by` is not one of the allowed options.
 
         Examples:
-            # Get data for a single country
-            data = isd.get_data(start='2020-01-01', end='2020-12-31', countries='US')
 
-            # Get data for multiple countries
-            data = isd.get_data(start='2020-01-01', countries=['US', 'CA', 'MX'])
+            .. code-block:: python
 
-            # Get data within a bounding box
-            data = isd.get_data(start='2020-01-01', geometry=(-100, 30, -90, 40))
+                # Get data for a single country
+                data = isd.get_data(start='2020-01-01', end='2020-12-31', countries='US')
+
+                # Get data for multiple countries
+                data = isd.get_data(start='2020-01-01', countries=['US', 'CA', 'MX'])
+
+                # Get data within a bounding box
+                data = isd.get_data(start='2020-01-01', geometry=(-100, 30, -90, 40))
         """
         check_params(param=organize_by, params=("field", "location"))
         time = daterange(start, end, freq="h")
