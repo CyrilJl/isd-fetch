@@ -6,7 +6,7 @@
 
 **PyISD** is a Python package designed for efficiently accessing and processing NOAA's ISD Lite dataset.
 
-For more information, please see the [full documentation](https://CyrilJl.github.io/pyisd/).
+For more information, please see the [full documentation]([https://CyrilJl.github.io/pyisd/](https://isd-fetch.readthedocs.io/en/latest/index.html)).
 
 ## Installation
 
@@ -34,5 +34,3 @@ france_data = isd.get_data(
 temperature = france_data['temp']
 temperature.sample(5)
 ```
-
-For more examples and advanced usage, please refer to the [documentation](https://CyrilJl.github.io/pyisd/).
