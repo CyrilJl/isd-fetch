@@ -29,7 +29,7 @@ html_title = "isd-fetch"
 html_use_index = False  # Don't create index
 html_domain_indices = False  # Don't need module indices
 html_theme_options = {
-    "main_nav_links": {"Context": "context", "How To Use": "how_to_use", "API Reference": "api_reference"},
+    "main_nav_links": {"Presenting the data": "context", "How To Use": "how_to_use", "API Reference": "api_reference"},
     "extra_header_link_icons": {
         "repository on GitHub": {
             "link": "https://github.com/CyrilJl/isd-fetch",
