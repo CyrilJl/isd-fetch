@@ -24,3 +24,6 @@ requires-python = ">=3.7"
 [tool.ruff]
 line-length = 120
 fix = true
+
+[tool.pytest.ini_options]
+markers = ["integration: tests that depend on live network services and NOAA data"]

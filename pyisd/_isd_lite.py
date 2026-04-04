@@ -10,7 +10,7 @@ import pandas as pd
 from geopandas.base import GeoPandasBase
 from tqdm.auto import tqdm
 
-from .misc import check_params, daterange, proj, to_crs
+from .misc import daterange, proj, to_crs
 
 
 class MetadataDownloadError(RuntimeError):
@@ -126,7 +126,7 @@ class IsdLite:
     @property
     def raw_metadata(self):
         """Weather station metadata, loaded lazily on first access."""
-        return self._ensure_metadata()
+        return self._load_metadata()
 
     @raw_metadata.setter
     def raw_metadata(self, value):
@@ -139,11 +139,6 @@ class IsdLite:
     def _get_raw_metadata(self):
         """Backward-compatible wrapper for refreshing station metadata."""
         return self.refresh_metadata()
-
-    def _ensure_metadata(self):
-        if self._raw_metadata is None:
-            return self._load_metadata()
-        return self._raw_metadata
 
     def _download_metadata_text(self):
         with urlopen(self.metadata_url, timeout=self.metadata_timeout) as response:
@@ -215,27 +210,20 @@ class IsdLite:
 
     @classmethod
     def _download_data_id(cls, usaf_id, wban_id, years):
-        ret = []
+        station_id = f"{usaf_id}-{wban_id}"
+        frames = []
         for year in years:
             url = urljoin(cls.data_url.format(year=year), f"{usaf_id}-{wban_id}-{year}.gz")
             try:
-                df = cls._download_read(url)
-                ret.append(df)
-            except HTTPError as exc:
-                if exc.code == 404:
+                frames.append(cls._download_read(url))
+            except Exception as exc:
+                if isinstance(exc, HTTPError) and exc.code == 404:
                     continue
                 raise DataDownloadError(
-                    f"Failed to download data for station {usaf_id}-{wban_id} in {year} from {url}"
-                ) from exc
-            except Exception as exc:
-                raise DataDownloadError(
-                    f"Failed to download data for station {usaf_id}-{wban_id} in {year} from {url}"
+                    f"Failed to download data for station {station_id} in {year} from {url}"
                 ) from exc
 
-        if ret:
-            return pd.concat(ret)
-        else:
-            return pd.DataFrame()
+        return pd.concat(frames) if frames else pd.DataFrame()
 
     def get_data(
         self,
@@ -294,7 +282,8 @@ class IsdLite:
                 # Get data within a bounding box
                 data = isd.get_data(start='2020-01-01', geometry=(-100, 30, -90, 40))
         """
-        check_params(param=organize_by, params=("field", "location"))
+        if organize_by not in {"field", "location"}:
+            raise ValueError(f"`{organize_by}` is not a recognized argument, must be one of field, location!")
         time = daterange(start, end, freq="h")
         years = [int(year) for year in dict.fromkeys(time.strftime("%Y"))]
 

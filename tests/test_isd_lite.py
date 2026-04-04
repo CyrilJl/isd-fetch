@@ -164,28 +164,21 @@ def test_download_data_id_raises_on_parse_error(monkeypatch):
         IsdLite._download_data_id("123456", "78901", [2024])
 
 
-def test_field_mode_returns_empty_frames_when_no_station_matches():
+@pytest.mark.parametrize(
+    ("stations", "download_data"),
+    [
+        ([], None),
+        ([("123456", "78901")], lambda usaf_id, wban_id, years: pd.DataFrame()),
+    ],
+)
+def test_field_mode_returns_empty_frames_when_no_data(stations, download_data):
     module = IsdLite()
-
-    module._filter_metadata = lambda countries, geometry: []
-
-    result = module.get_data(start="2023-01-01", end="2023-01-01", organize_by="field")
     expected_index = pd.date_range("2023-01-01", "2023-01-02", freq="h", inclusive="left")
 
-    assert set(result) == set(module.fields)
-    for frame in result.values():
-        assert frame.empty
-        assert frame.index.equals(expected_index)
-
-
-def test_field_mode_returns_empty_frames_when_station_has_no_data():
-    module = IsdLite()
-
-    module._filter_metadata = lambda countries, geometry: [("123456", "78901")]
-    module._download_data_id = lambda usaf_id, wban_id, years: pd.DataFrame()
-
+    module._filter_metadata = lambda countries, geometry: stations
+    if download_data is not None:
+        module._download_data_id = download_data
     result = module.get_data(start="2023-01-01", end="2023-01-01", organize_by="field")
-    expected_index = pd.date_range("2023-01-01", "2023-01-02", freq="h", inclusive="left")
 
     assert set(result) == set(module.fields)
     for frame in result.values():
@@ -227,40 +220,38 @@ def test_filter_metadata_returns_empty_when_combined_filters_do_not_overlap():
     assert result == []
 
 
-def test_isdlite_location(crs):
-    geometry = get_box(place="Paris", width=1.0, crs=crs)
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    ("place", "organize_by", "station_id", "expected_key"),
+    [
+        ("Paris", "location", None, None),
+        ("Paris", "field", None, None),
+        ("Nashville", "location", None, "723270-13897"),
+        (None, "location", "723270-13897", "723270-13897"),
+    ],
+)
+def test_isdlite_live_fetch(crs, place, organize_by, station_id, expected_key):
     module = IsdLite(verbose=True)
-    data = module.get_data(start=20230101, end=20241231, geometry=geometry, organize_by="location")
-    assert data[list(data.keys())[0]].size > 0
+    kwargs = {"start": 20230101, "end": 20241231, "organize_by": organize_by}
+
+    if place is not None:
+        kwargs["geometry"] = get_box(place=place, width=1.0, crs=crs)
+    if station_id is not None:
+        kwargs["station_id"] = station_id
+
+    data = module.get_data(**kwargs)
+
+    if organize_by == "field":
+        assert data["temp"].size > 0
+        return
+
+    if expected_key is None:
+        expected_key = next(iter(data))
+    assert expected_key in data
+    assert data[expected_key].size > 0
 
 
-def test_isdlite_field(crs):
-    geometry = get_box(place="Paris", width=1.0, crs=crs)
-    module = IsdLite(verbose=True)
-    data = module.get_data(start=20230101, end=20241231, geometry=geometry, organize_by="field")
-    assert data["temp"].size > 0
-
-
-def test_isdlite_wban_id(crs):
-    geometry = get_box(place="Nashville", width=1.0, crs=crs)
-    module = IsdLite(verbose=True)
-    data = module.get_data(start=20230101, end=20241231, geometry=geometry, organize_by="location")
-    assert "723270-13897" in data
-    assert data["723270-13897"].size > 0
-
-
-def test_isdlite_station_id():
-    """
-    Test that get_data returns data for a specific station_id in 'USAF-WBAN' format.
-    """
-    module = IsdLite(verbose=True)
-    # Provide station_id override, no spatial filter
-    data = module.get_data(start=20230101, end=20241231, station_id="723270-13897", organize_by="location")
-    # Ensure the key is the full station_id and data is returned
-    assert "723270-13897" in data
-    assert data["723270-13897"].size > 0
-
-
+@pytest.mark.integration
 def test_isdlite_wban_leading_zero():
     usaf_id = "722692"
     wban_id = "00367"

@@ -4,59 +4,6 @@ import pandas as pd
 import pyproj
 
 
-def check_params(param, params=None, types=None):
-    """Checks a parameter. Tests if ``param`` belongs to ``params`` and/or if type(param)
-    belongs to ``types``.
-
-    This function performs checks on the parameter ``param`` to verify if it belongs to a set
-    of acceptable parameters ``params`` and/or if it has a type belonging to a set of acceptable types ``types``.
-
-    Args:
-        param:
-            The parameter to test.
-        params (iterable, optional):
-            The set of acceptable parameters. If specified, ``param`` must belong to this set.
-            Default: None.
-        types (type or iterable of types, optional):
-            The set of acceptable types. If specified, the type of ``param`` must belong to this set.
-            Default: None.
-
-    Raises:
-        ValueError:
-            If the parameter ``param`` does not satisfy the conditions defined by ``params`` and/or ``types``.
-        TypeError:
-            If the parameter ``param`` has an unacceptable type.
-
-    Returns:
-        The initial parameter ``param``.
-
-    Example:
-        .. code-block:: python
-
-            check_params(5, params=[1, 2, 3, 4, 5])
-            >>> 5
-            check_params('hello', types=str)
-            >>> 'hello'
-
-    Note:
-        - If ``params`` is specified, ``param`` must be an element of ``params``.
-        - If ``types`` is specified, the type of ``param`` must be an element of ``types``.
-        - If both ``params`` and ``types`` are specified, ``param`` must satisfy both conditions.
-        - If ``params`` and ``types`` are None, no checks are performed, and ``param`` is returned unchanged.
-    """
-    if (types is not None) and (not isinstance(param, types)):
-        if isinstance(types, type):
-            accepted = f"{types}"
-        else:
-            accepted = f"{', '.join([str(t) for t in types])}"
-        msg = f"`{param}` is not of an acceptable type, must be of type {accepted}!"
-        raise TypeError(msg)
-    if (params is not None) and (param not in params):
-        msg = f"`{param}` is not a recognized argument, must be one of {', '.join(sorted(params))}!"
-        raise ValueError(msg)
-    return param
-
-
 def daterange(date_start, date_end=None, freq="h") -> pd.DatetimeIndex:
     """
     Creates a date range with a given frequency between `date_start` and `date_end`.

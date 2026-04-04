@@ -4,11 +4,12 @@ import numpy as np
 from geopy.geocoders import Nominatim
 from shapely.geometry import box
 
-from pyisd.misc import check_params, proj
+from pyisd.misc import proj
 
 
 def get_coordinates(place, crs=4326, retries=10, retry_delay=1, errors="raise"):
-    check_params(errors, params=("ignore", "raise"))
+    if errors not in {"ignore", "raise"}:
+        raise ValueError(f"`{errors}` is not a recognized argument, must be one of ignore, raise!")
     geolocator = Nominatim(user_agent="pyisd-tests")
     results = []
 
