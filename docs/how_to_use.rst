@@ -69,17 +69,7 @@ PyISD offers flexible spatial filtering through the ``geometry`` parameter:
     # city = gpd.read_file('city_boundary.geojson')
     # data = isd.get_data(start='2023-01-01', geometry=city)
 
-3. **Place Name**: Using the ``get_box()`` helper function
-
-.. code-block:: python
-
-    from pyisd.misc import get_box
-    from pyisd import IsdLite
-    isd = IsdLite()
-    geometry = get_box('London', width=2.0, crs=4326)
-    data = isd.get_data(start='2023-01-01', geometry=geometry)
-
-4. **Global Data**: Setting geometry to None (⚠️ use with caution - large downloads)
+3. **Global Data**: Setting geometry to None (use with caution for large downloads)
 
 .. code-block:: python
 

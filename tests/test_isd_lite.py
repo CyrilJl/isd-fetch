@@ -1,7 +1,7 @@
 import pytest
 
 from pyisd import IsdLite
-from pyisd.misc import get_box
+from tests.helpers import get_box
 
 
 @pytest.fixture

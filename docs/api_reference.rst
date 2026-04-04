@@ -15,4 +15,4 @@ The ``pyisd.misc`` module
 -------------------------
 
 .. automodule:: pyisd.misc
-   :members: get_box, get_coordinates, daterange, proj, to_crs
+   :members: daterange, proj, to_crs
