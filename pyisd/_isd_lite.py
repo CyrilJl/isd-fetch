@@ -182,19 +182,18 @@ class IsdLite:
         """
         Internal: filter raw_metadata by country or geometry and return list of (USAF, WBAN) tuples.
         """
-        df = self.raw_metadata
-        # Apply filters
-        if (geometry is None) and (countries is None):
-            filt = df
-        elif geometry is None:
+        filt = self.raw_metadata
+
+        if countries is not None:
             if isinstance(countries, str):
                 countries = (countries,)
-            filt = df[df["CTRY"].isin(countries)]
-        else:
+            filt = filt[filt["CTRY"].isin(countries)]
+
+        if geometry is not None:
             if isinstance(geometry, gpd.base.GeoPandasBase):
-                filt = gpd.clip(df, geometry.to_crs(self.crs))
-            else:
-                filt = gpd.clip(df, geometry)
+                geometry = geometry.to_crs(self.crs)
+            filt = gpd.clip(filt, geometry)
+
         # Extract unique station identifier pairs
         pairs = filt.drop_duplicates(subset=["USAF", "WBAN"])[["USAF", "WBAN"]].values
         return [(str(usaf), str(wban)) for usaf, wban in pairs]
@@ -253,11 +252,13 @@ class IsdLite:
                 If provided, overrides any spatial or country filters. If None, data for all stations will
             countries (str or iterable of str, optional): Country code(s) to filter stations by. Must be valid codes from
                 the ISD-Lite metadata (found in raw_metadata['CTRY']). Can be either a single country code as string
-                or multiple codes as an iterable. If None, stations from all countries will be considered.
+                or multiple codes as an iterable. If None, stations from all countries will be considered. When used
+                together with ``geometry``, both filters are applied.
             geometry (GeoSeries or tuple, optional): A spatial filter for the stations. Can be either:
                 - A GeoSeries or geometry object to filter stations by spatial location
                 - A tuple of (xmin, ymin, xmax, ymax) defining a bounding box
-                If None, data for all stations will be retrieved. Defaults to None.
+                If None, data for all stations will be retrieved. Defaults to None. When used together with
+                ``countries``, only stations matching both filters are considered.
             organize_by (str, optional): Determines how the resulting data is organized. Options are:
                 - 'location': Organize data by weather station.
                 - 'field': Organize data by weather variable.
@@ -269,6 +270,7 @@ class IsdLite:
             `organize_by` parameter:
                 - If 'location': Keys are station IDs, and values are DataFrames with weather data.
                 - If 'field': Keys are weather variables, and values are DataFrames with stations as columns.
+                  If no data is available, each field maps to an empty DataFrame indexed by the requested time range.
 
         Raises:
             ValueError: If `organize_by` is not one of the allowed options.
@@ -317,6 +319,8 @@ class IsdLite:
                     ret[f"{usaf_id}-{wban_id}"] = data
 
         if organize_by == "field":
+            if not ret:
+                return {field: pd.DataFrame(index=time) for field in self.fields}
             ret = {
                 field: pd.concat([ret[station_id][field].rename(station_id) for station_id in ret], axis=1)
                 for field in self.fields

@@ -3,6 +3,7 @@ from urllib.error import HTTPError, URLError
 import geopandas as gpd
 import pandas as pd
 import pytest
+from shapely.geometry import Point, box
 
 from pyisd import DataDownloadError, IsdLite, MetadataDownloadError
 from tests.helpers import get_box
@@ -161,6 +162,69 @@ def test_download_data_id_raises_on_parse_error(monkeypatch):
 
     with pytest.raises(DataDownloadError, match="2024"):
         IsdLite._download_data_id("123456", "78901", [2024])
+
+
+def test_field_mode_returns_empty_frames_when_no_station_matches():
+    module = IsdLite()
+
+    module._filter_metadata = lambda countries, geometry: []
+
+    result = module.get_data(start="2023-01-01", end="2023-01-01", organize_by="field")
+    expected_index = pd.date_range("2023-01-01", "2023-01-02", freq="h", inclusive="left")
+
+    assert set(result) == set(module.fields)
+    for frame in result.values():
+        assert frame.empty
+        assert frame.index.equals(expected_index)
+
+
+def test_field_mode_returns_empty_frames_when_station_has_no_data():
+    module = IsdLite()
+
+    module._filter_metadata = lambda countries, geometry: [("123456", "78901")]
+    module._download_data_id = lambda usaf_id, wban_id, years: pd.DataFrame()
+
+    result = module.get_data(start="2023-01-01", end="2023-01-01", organize_by="field")
+    expected_index = pd.date_range("2023-01-01", "2023-01-02", freq="h", inclusive="left")
+
+    assert set(result) == set(module.fields)
+    for frame in result.values():
+        assert frame.empty
+        assert frame.index.equals(expected_index)
+
+
+def test_filter_metadata_applies_country_and_geometry_together():
+    module = IsdLite()
+    module.raw_metadata = gpd.GeoDataFrame(
+        {
+            "USAF": ["100001", "100002", "100003"],
+            "WBAN": ["00001", "00002", "00003"],
+            "CTRY": ["FR", "US", "FR"],
+        },
+        geometry=[Point(0, 0), Point(1, 1), Point(10, 10)],
+        crs=4326,
+    )
+
+    result = module._filter_metadata(countries="FR", geometry=box(-1, -1, 2, 2))
+
+    assert result == [("100001", "00001")]
+
+
+def test_filter_metadata_returns_empty_when_combined_filters_do_not_overlap():
+    module = IsdLite()
+    module.raw_metadata = gpd.GeoDataFrame(
+        {
+            "USAF": ["100001", "100002"],
+            "WBAN": ["00001", "00002"],
+            "CTRY": ["FR", "US"],
+        },
+        geometry=[Point(0, 0), Point(1, 1)],
+        crs=4326,
+    )
+
+    result = module._filter_metadata(countries="FR", geometry=box(5, 5, 6, 6))
+
+    assert result == []
 
 
 def test_isdlite_location(crs):
