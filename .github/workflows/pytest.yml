@@ -2,9 +2,7 @@ name: Run Pytest
 
 on:
   workflow_dispatch: # Manual trigger
-  pull_request: # Run on pull requests targeting the main branch
-    branches:
-      - main
+  pull_request: # Run on every pull request
   schedule: # Weekly scheduled run
     - cron: "0 8 * * 1" # Every Monday at 08:00 UTC
 
