@@ -1,12 +1,18 @@
 [![PyPI version](https://badge.fury.io/py/isd-fetch.svg)](https://badge.fury.io/py/isd-fetch)
 [![Unit tests](https://github.com/CyrilJl/isd-fetch/actions/workflows/pytest.yml/badge.svg)](https://github.com/CyrilJl/isd-fetch/actions/workflows/pytest.yml)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/cdc692322be649cea8b8b6760bfb333e)](https://app.codacy.com/gh/CyrilJl/isd-fetch/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
-# PyISD: A Python Package for NOAA's ISD Lite Dataset
+# isd-fetch
 
-**PyISD** is a Python package designed for efficiently accessing and processing NOAA's ISD Lite dataset.
+`isd-fetch` is a Python package for efficiently accessing and processing NOAA's ISD Lite dataset. The project is
+distributed as `isd-fetch` and imported as `pyisd`.
 
-For more information, please see the [full documentation]([https://CyrilJl.github.io/pyisd/](https://isd-fetch.readthedocs.io/en/latest/index.html)).
+It supports:
+
+- browsing NOAA station metadata as a `GeoDataFrame`
+- filtering by country, geometry, or a specific `station_id`
+- returning results organized either by station or by weather field
+
+For more information, see the [full documentation](https://isd-fetch.readthedocs.io/en/latest/index.html).
 
 ## Installation
 
@@ -33,4 +39,26 @@ france_data = isd.get_data(
 # Access temperature data
 temperature = france_data['temp']
 temperature.sample(5)
+```
+
+## Another Example
+
+```python
+from pyisd import IsdLite
+
+isd = IsdLite()
+
+# Metadata is loaded lazily on first access
+stations = isd.raw_metadata[['USAF', 'WBAN', 'STATION NAME', 'CTRY']].sample(5)
+
+# Fetch one station directly when you already know its NOAA identifier
+nashville = isd.get_data(
+    start='2024-01-01',
+    end='2024-01-07',
+    station_id='723270-13897',
+    organize_by='location'
+)
+
+# Station-organized results are keyed by station id
+nashville['723270-13897'][['temp', 'windspeed']].head()
 ```

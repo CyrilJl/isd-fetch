@@ -2,4 +2,3 @@ sphinx
 sphinxawesome-theme
 geopandas
 tqdm
-geopy
