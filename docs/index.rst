@@ -6,7 +6,9 @@
 Welcome to pyisd's documentation!
 =================================
 
-**PyISD** is a Python package designed for efficiently accessing and processing NOAA's ISD Lite dataset. The ISD Lite dataset, a streamlined version of the full Integrated Surface Database (ISD), provides hourly weather observations worldwide. It includes eight essential surface parameters in a fixed-width format, free of duplicate values, sub-hourly data, and complex flags. For more information, visit the `official ISD homepage <https://www.ncei.noaa.gov/products/land-based-station/integrated-surface-database>`_.
+**PyISD** is a Python package designed for efficiently accessing and processing NOAA's ISD Lite dataset. The project is distributed as ``isd-fetch`` and imported as ``pyisd``.
+
+The ISD Lite dataset, a streamlined version of the full Integrated Surface Database (ISD), provides hourly weather observations worldwide. It includes eight essential surface parameters in a fixed-width format, free of duplicate values, sub-hourly data, and complex flags. For more information, visit the `official ISD homepage <https://www.ncei.noaa.gov/products/land-based-station/integrated-surface-database>`_.
 
 .. toctree::
    :maxdepth: 1
