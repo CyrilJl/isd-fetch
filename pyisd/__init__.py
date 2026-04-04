@@ -1,3 +1,3 @@
-from ._isd_lite import IsdLite
+from ._isd_lite import IsdLite, MetadataDownloadError
 
-__all__ = ["IsdLite"]
+__all__ = ["IsdLite", "MetadataDownloadError"]

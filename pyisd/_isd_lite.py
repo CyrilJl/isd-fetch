@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
+from time import sleep
 from urllib.error import URLError
 from urllib.parse import urljoin
 from urllib.request import urlopen
@@ -9,6 +10,10 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 from .misc import check_params, daterange, proj, to_crs
+
+
+class MetadataDownloadError(RuntimeError):
+    """Raised when station metadata cannot be fetched from NOAA."""
 
 
 class IsdLite:
@@ -34,6 +39,12 @@ class IsdLite:
             Defaults to 4326 (WGS 84).
         verbose (int, optional): Verbosity level for progress reporting.
             0 for silent, 1 for progress bars. Defaults to 0.
+        metadata_retries (int, optional): Number of metadata download attempts before failing.
+            Defaults to 3.
+        metadata_timeout (int or float, optional): Metadata request timeout in seconds.
+            Defaults to 2.
+        metadata_retry_delay (int or float, optional): Base delay between metadata retries.
+            Retries use exponential backoff. Defaults to 1.
 
     Examples:
         .. code-block:: python
@@ -70,6 +81,7 @@ class IsdLite:
             station_temp = station_data['temp']
     """
 
+    metadata_url = "https://www.ncei.noaa.gov/pub/data/noaa/isd-history.txt"
     data_url = "https://www.ncei.noaa.gov/pub/data/noaa/isd-lite/{year}/"
     fields = (
         "temp",
@@ -81,40 +93,86 @@ class IsdLite:
         "precipitation-1h",
         "precipitation-6h",
     )
-    max_retries = 100
+    default_metadata_retries = 3
+    default_metadata_timeout = 2
+    default_metadata_retry_delay = 1
 
-    def __init__(self, crs=4326, verbose=0):
+    def __init__(self, crs=4326, verbose=0, metadata_retries=None, metadata_timeout=None, metadata_retry_delay=None):
         self.crs = to_crs(crs)
-        self._get_raw_metadata()
         self.verbose = verbose
+        self.metadata_retries = self.default_metadata_retries if metadata_retries is None else metadata_retries
+        self.metadata_timeout = self.default_metadata_timeout if metadata_timeout is None else metadata_timeout
+        self.metadata_retry_delay = (
+            self.default_metadata_retry_delay if metadata_retry_delay is None else metadata_retry_delay
+        )
+        self._raw_metadata = None
+
+        if self.metadata_retries < 1:
+            raise ValueError("metadata_retries must be at least 1")
+        if self.metadata_timeout <= 0:
+            raise ValueError("metadata_timeout must be positive")
+        if self.metadata_retry_delay < 0:
+            raise ValueError("metadata_retry_delay must be non-negative")
+
+    @property
+    def raw_metadata(self):
+        """Weather station metadata, loaded lazily on first access."""
+        return self._ensure_metadata()
+
+    @raw_metadata.setter
+    def raw_metadata(self, value):
+        self._raw_metadata = value
+
+    def refresh_metadata(self):
+        """Force a metadata refresh from NOAA, replacing the in-memory cache on success."""
+        return self._load_metadata(force=True)
 
     def _get_raw_metadata(self):
-        """Retrieve and process weather station metadata from NOAA sources."""
-        for attempt in range(self.max_retries):
+        """Backward-compatible wrapper for refreshing station metadata."""
+        return self.refresh_metadata()
+
+    def _ensure_metadata(self):
+        if self._raw_metadata is None:
+            return self._load_metadata()
+        return self._raw_metadata
+
+    def _download_metadata_text(self):
+        with urlopen(self.metadata_url, timeout=self.metadata_timeout) as response:
+            return response.read().decode("utf-8")
+
+    def _parse_metadata(self, content):
+        metadata = (
+            pd.read_fwf(StringIO(content), skiprows=20, header=0, dtype={"USAF": str, "WBAN": str})
+            .dropna(subset=["LAT", "LON"])
+            .query("not (LON == 0 and LAT == 0)")
+        )
+
+        metadata["x"], metadata["y"] = proj(metadata["LON"], metadata["LAT"], 4326, self.crs)
+        metadata[["BEGIN", "END"]] = metadata[["BEGIN", "END"]].astype(str).apply(pd.to_datetime)
+
+        return gpd.GeoDataFrame(
+            metadata.drop(columns=["LON", "LAT"]),
+            geometry=gpd.points_from_xy(metadata.x, metadata.y, crs=self.crs),
+        )
+
+    def _load_metadata(self, force=False):
+        """Retrieve and cache weather station metadata from NOAA sources."""
+        if self._raw_metadata is not None and not force:
+            return self._raw_metadata
+
+        last_error = None
+        for attempt in range(self.metadata_retries):
             try:
-                # Open the URL and read the content using urllib
-                with urlopen("https://www.ncei.noaa.gov/pub/data/noaa/isd-history.txt", timeout=2) as response:
-                    content = response.read().decode("utf-8")
-
-                # Process the content with pandas
-                metadata = (
-                    pd.read_fwf(StringIO(content), skiprows=20, header=0, dtype={"USAF": str, "WBAN": str})
-                    .dropna(subset=["LAT", "LON"])
-                    .query("not (LON == 0 and LAT == 0)")
-                )
-
-                metadata["x"], metadata["y"] = proj(metadata["LON"], metadata["LAT"], 4326, self.crs)
-                metadata[["BEGIN", "END"]] = metadata[["BEGIN", "END"]].astype(str).apply(pd.to_datetime)
-
-                self.raw_metadata = gpd.GeoDataFrame(
-                    metadata.drop(columns=["LON", "LAT"]),
-                    geometry=gpd.points_from_xy(metadata.x, metadata.y, crs=self.crs),
-                )
-                break  # Exit the loop if successful
-
+                self._raw_metadata = self._parse_metadata(self._download_metadata_text())
+                return self._raw_metadata
             except URLError as e:
-                if attempt == self.max_retries - 1:
-                    raise RuntimeError(f"Failed to download metadata after {self.max_retries} attempts: {e}")
+                last_error = e
+                if attempt < self.metadata_retries - 1 and self.metadata_retry_delay:
+                    sleep(self.metadata_retry_delay * (2**attempt))
+
+        raise MetadataDownloadError(
+            f"Failed to download metadata from {self.metadata_url} after {self.metadata_retries} attempts"
+        ) from last_error
 
     def _filter_metadata(self, countries, geometry):
         """

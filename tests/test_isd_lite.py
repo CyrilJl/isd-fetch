@@ -1,12 +1,131 @@
+from urllib.error import URLError
+
+import geopandas as gpd
+import pandas as pd
 import pytest
 
-from pyisd import IsdLite
+from pyisd import IsdLite, MetadataDownloadError
 from tests.helpers import get_box
 
 
 @pytest.fixture
 def crs():
     return 4326
+
+
+def make_metadata(usaf_id="723270", wban_id="13897", country="US"):
+    return gpd.GeoDataFrame(
+        {
+            "USAF": [usaf_id],
+            "WBAN": [wban_id],
+            "CTRY": [country],
+            "BEGIN": [pd.Timestamp("2020-01-01")],
+            "END": [pd.Timestamp("2024-12-31")],
+            "x": [-86.6782],
+            "y": [36.1245],
+        },
+        geometry=gpd.points_from_xy([-86.6782], [36.1245], crs=4326),
+    )
+
+
+def test_isdlite_init_is_lazy(monkeypatch):
+    calls = []
+
+    def fake_download(self):
+        calls.append("download")
+        return ""
+
+    monkeypatch.setattr(IsdLite, "_download_metadata_text", fake_download)
+
+    module = IsdLite()
+
+    assert module._raw_metadata is None
+    assert calls == []
+
+
+def test_raw_metadata_is_loaded_once(monkeypatch):
+    downloads = []
+    metadata = make_metadata()
+
+    def fake_download(self):
+        downloads.append("download")
+        return "metadata"
+
+    def fake_parse(self, content):
+        assert content == "metadata"
+        return metadata
+
+    monkeypatch.setattr(IsdLite, "_download_metadata_text", fake_download)
+    monkeypatch.setattr(IsdLite, "_parse_metadata", fake_parse)
+
+    module = IsdLite()
+
+    first = module.raw_metadata
+    second = module.raw_metadata
+
+    assert first is metadata
+    assert second is metadata
+    assert downloads == ["download"]
+
+
+def test_refresh_metadata_forces_reload(monkeypatch):
+    downloads = []
+
+    def fake_download(self):
+        downloads.append("download")
+        return f"metadata-{len(downloads)}"
+
+    def fake_parse(self, content):
+        suffix = content.rsplit("-", 1)[1]
+        return make_metadata(usaf_id=f"station-{suffix}")
+
+    monkeypatch.setattr(IsdLite, "_download_metadata_text", fake_download)
+    monkeypatch.setattr(IsdLite, "_parse_metadata", fake_parse)
+
+    module = IsdLite()
+
+    first = module.raw_metadata
+    refreshed = module.refresh_metadata()
+
+    assert downloads == ["download", "download"]
+    assert first["USAF"].iloc[0] == "station-1"
+    assert refreshed["USAF"].iloc[0] == "station-2"
+
+
+def test_station_id_does_not_load_metadata(monkeypatch):
+    module = IsdLite()
+    sample = pd.DataFrame({"temp": [1.0]}, index=pd.DatetimeIndex([pd.Timestamp("2023-01-01 00:00:00")]))
+
+    def fail_metadata_load(self):
+        raise AssertionError("metadata should not be loaded for station_id requests")
+
+    monkeypatch.setattr(IsdLite, "_download_metadata_text", fail_metadata_load)
+    module._download_data_id = lambda usaf_id, wban_id, years: sample
+
+    data = module.get_data(start="2023-01-01", end="2023-01-01", station_id="123456-78901", organize_by="location")
+
+    assert "123456-78901" in data
+    assert data["123456-78901"]["temp"].iloc[0] == 1.0
+
+
+def test_metadata_download_error_uses_retry_backoff(monkeypatch):
+    delays = []
+    attempts = []
+
+    def fail_download(self):
+        attempts.append("download")
+        raise URLError("boom")
+
+    monkeypatch.setattr(IsdLite, "_download_metadata_text", fail_download)
+    monkeypatch.setattr("pyisd._isd_lite.sleep", lambda delay: delays.append(delay))
+
+    module = IsdLite(metadata_retries=3, metadata_retry_delay=1)
+
+    with pytest.raises(MetadataDownloadError, match="after 3 attempts"):
+        _ = module.raw_metadata
+
+    assert attempts == ["download", "download", "download"]
+    assert delays == [1, 2]
 
 
 def test_isdlite_location(crs):
