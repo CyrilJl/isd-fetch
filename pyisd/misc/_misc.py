@@ -1,4 +1,4 @@
-from typing import Iterable, Tuple, Union
+from typing import Iterable, Optional, Tuple, Union
 
 import pandas as pd
 import pyproj
@@ -115,7 +115,7 @@ def proj(
     return t.transform(x, y)
 
 
-def to_crs(proj: Union[str, int, pyproj.CRS, pyproj.Proj, None]) -> pyproj.CRS:
+def to_crs(proj: Union[str, int, pyproj.CRS, pyproj.Proj, None]) -> Optional[pyproj.CRS]:
     """
     Converts a coordinate system into a pyproj.CRS object.
 
@@ -123,7 +123,7 @@ def to_crs(proj: Union[str, int, pyproj.CRS, pyproj.Proj, None]) -> pyproj.CRS:
         proj (Union[str, int, pyproj.CRS, pyproj.Proj, None]): The coordinate system to convert.
 
     Returns:
-        pyproj.CRS: The pyproj.CRS object corresponding to the specified coordinate system.
+        Optional[pyproj.CRS]: The pyproj.CRS object corresponding to the specified coordinate system.
 
     Example:
         .. code-block:: python

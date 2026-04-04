@@ -7,6 +7,7 @@ from urllib.request import urlopen
 
 import geopandas as gpd
 import pandas as pd
+from geopandas.base import GeoPandasBase
 from tqdm.auto import tqdm
 
 from .misc import check_params, daterange, proj, to_crs
@@ -102,7 +103,11 @@ class IsdLite:
     default_metadata_retry_delay = 1
 
     def __init__(self, crs=4326, verbose=0, metadata_retries=None, metadata_timeout=None, metadata_retry_delay=None):
-        self.crs = to_crs(crs)
+        crs_value = to_crs(crs)
+        if crs_value is None:
+            raise TypeError("crs must not be None")
+
+        self.crs = crs_value
         self.verbose = verbose
         self.metadata_retries = self.default_metadata_retries if metadata_retries is None else metadata_retries
         self.metadata_timeout = self.default_metadata_timeout if metadata_timeout is None else metadata_timeout
@@ -190,7 +195,7 @@ class IsdLite:
             filt = filt[filt["CTRY"].isin(countries)]
 
         if geometry is not None:
-            if isinstance(geometry, gpd.base.GeoPandasBase):
+            if isinstance(geometry, GeoPandasBase):
                 geometry = geometry.to_crs(self.crs)
             filt = gpd.clip(filt, geometry)
 
@@ -291,7 +296,7 @@ class IsdLite:
         """
         check_params(param=organize_by, params=("field", "location"))
         time = daterange(start, end, freq="h")
-        years = time.year.unique()
+        years = [int(year) for year in dict.fromkeys(time.strftime("%Y"))]
 
         # Determine station list: optional single station override
         if station_id is not None:
