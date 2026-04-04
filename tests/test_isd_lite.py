@@ -1,10 +1,10 @@
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 
 import geopandas as gpd
 import pandas as pd
 import pytest
 
-from pyisd import IsdLite, MetadataDownloadError
+from pyisd import DataDownloadError, IsdLite, MetadataDownloadError
 from tests.helpers import get_box
 
 
@@ -126,6 +126,41 @@ def test_metadata_download_error_uses_retry_backoff(monkeypatch):
 
     assert attempts == ["download", "download", "download"]
     assert delays == [1, 2]
+
+
+def test_download_data_id_ignores_missing_year_files(monkeypatch):
+    sample = pd.DataFrame({"temp": [1.0]}, index=pd.DatetimeIndex([pd.Timestamp("2024-01-01 00:00:00")]))
+
+    def fake_download(url):
+        if url.endswith("2023.gz"):
+            raise HTTPError(url, 404, "Not Found", hdrs=None, fp=None)
+        return sample
+
+    monkeypatch.setattr(IsdLite, "_download_read", classmethod(lambda cls, url: fake_download(url)))
+
+    result = IsdLite._download_data_id("123456", "78901", [2023, 2024])
+
+    assert result.equals(sample)
+
+
+def test_download_data_id_raises_on_transport_error(monkeypatch):
+    def fail_download(url):
+        raise URLError("network down")
+
+    monkeypatch.setattr(IsdLite, "_download_read", classmethod(lambda cls, url: fail_download(url)))
+
+    with pytest.raises(DataDownloadError, match="123456-78901"):
+        IsdLite._download_data_id("123456", "78901", [2024])
+
+
+def test_download_data_id_raises_on_parse_error(monkeypatch):
+    def fail_parse(url):
+        raise ValueError("bad payload")
+
+    monkeypatch.setattr(IsdLite, "_download_read", classmethod(lambda cls, url: fail_parse(url)))
+
+    with pytest.raises(DataDownloadError, match="2024"):
+        IsdLite._download_data_id("123456", "78901", [2024])
 
 
 def test_isdlite_location(crs):

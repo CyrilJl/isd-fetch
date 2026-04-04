@@ -1,7 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
 from time import sleep
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin
 from urllib.request import urlopen
 
@@ -14,6 +14,10 @@ from .misc import check_params, daterange, proj, to_crs
 
 class MetadataDownloadError(RuntimeError):
     """Raised when station metadata cannot be fetched from NOAA."""
+
+
+class DataDownloadError(RuntimeError):
+    """Raised when station data cannot be fetched or parsed."""
 
 
 class IsdLite:
@@ -209,11 +213,20 @@ class IsdLite:
     def _download_data_id(cls, usaf_id, wban_id, years):
         ret = []
         for year in years:
+            url = urljoin(cls.data_url.format(year=year), f"{usaf_id}-{wban_id}-{year}.gz")
             try:
-                df = cls._download_read(urljoin(cls.data_url.format(year=year), f"{usaf_id}-{wban_id}-{year}.gz"))
+                df = cls._download_read(url)
                 ret.append(df)
-            except Exception as _:
-                pass
+            except HTTPError as exc:
+                if exc.code == 404:
+                    continue
+                raise DataDownloadError(
+                    f"Failed to download data for station {usaf_id}-{wban_id} in {year} from {url}"
+                ) from exc
+            except Exception as exc:
+                raise DataDownloadError(
+                    f"Failed to download data for station {usaf_id}-{wban_id} in {year} from {url}"
+                ) from exc
 
         if ret:
             return pd.concat(ret)
@@ -259,6 +272,7 @@ class IsdLite:
 
         Raises:
             ValueError: If `organize_by` is not one of the allowed options.
+            DataDownloadError: If station data cannot be downloaded or parsed.
 
         Examples:
 
