@@ -2,11 +2,12 @@
 [![Unit tests](https://github.com/CyrilJl/isd-fetch/actions/workflows/pytest.yml/badge.svg)](https://github.com/CyrilJl/isd-fetch/actions/workflows/pytest.yml)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/cdc692322be649cea8b8b6760bfb333e)](https://app.codacy.com/gh/CyrilJl/isd-fetch/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
-# PyISD: A Python Package for NOAA's ISD Lite Dataset
+# isd-fetch
 
-**PyISD** is a Python package designed for efficiently accessing and processing NOAA's ISD Lite dataset.
+`isd-fetch` is a Python package for efficiently accessing and processing NOAA's ISD Lite dataset. The project is
+distributed as `isd-fetch` and imported as `pyisd`.
 
-For more information, please see the [full documentation]([https://CyrilJl.github.io/pyisd/](https://isd-fetch.readthedocs.io/en/latest/index.html)).
+For more information, see the [full documentation](https://isd-fetch.readthedocs.io/en/latest/index.html).
 
 ## Installation
 
